@@ -40,12 +40,12 @@ docker run --name "$CONTAINER_NAME" \
     -d postgres:alpine
 
 echo "==> Esperando que PostgreSQL acepte conexiones"
-until docker exec "$CONTAINER_NAME" pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; do
+until docker exec "$CONTAINER_NAME" pg_isready -h 127.0.0.1 -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; do
     sleep 0.5
 done
 
 echo "==> Aplicando esquema de base de datos"
-docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" < db/schema/schema.sql
+docker exec -i "$CONTAINER_NAME" psql -h 127.0.0.1 -U "$DB_USER" -d "$DB_NAME" < db/schema/schema.sql
 
 echo "==> Ejecutando tests"
 go test -v ./...
