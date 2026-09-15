@@ -49,3 +49,7 @@ TuFutbol es una aplicación web desarrollada en Go diseñada para llevar el regi
 
 3. **Tareas posteriores:**
    * Eliminacion del contenedor y volúmenes asociados, independientemente de si las pruebas pasan o fallan.
+
+## Documentación
+
+La documentacion del proyecto se encuentra en [`docs/DOCUMENTACION.md`](docs/DOCUMENTACION.md).
