@@ -5,19 +5,20 @@ TuFutbol es una aplicación web desarrollada en Go diseñada para llevar el regi
 ---
 
 ## Requisitos previos
-* **Go** instalado en el sistema
-* **Docker** instalado en el sistema
-* **sqlc** instalado en el sistema
+* **Go** 1.26 o superior
+* **Docker** con **Docker Compose v2** (comando `docker compose`)
+* **sqlc**
+* **make** y **curl**
 
-* El puerto **5432** del host tiene que estar libre. Si hay un PostgreSQL corriendo localmente, detenelo o cambiá `DB_PORT` en `test.sh`.
+* Los puertos **8080** (API) y **5432** (PostgreSQL) tienen que estar libres. Si alguno está ocupado, se puede cambiar en el archivo `.env` (`API_PORT` y `DB_PORT`).
 
 ## Instrucciones de ejecución
-1. Clonar el repositorio, pararse en la raíz y ubicarse en el branch `tp2`:
+1. Clonar el repositorio, pararse en la raíz y ubicarse en el branch `tp3`:
 
    ```bash
    git clone https://github.com/nicorimoldi/TuFutbol
    cd TuFutbol
-   git checkout tp2
+   git checkout tp3
    ```
 
 2. Iniciar Docker si no se encuentra activo:
@@ -25,30 +26,33 @@ TuFutbol es una aplicación web desarrollada en Go diseñada para llevar el regi
    ```bash
    systemctl start docker
    ```
-   
-3. Ejecutar los tests mediante cualquiera de los siguientes comandos equivalentes:
+
+3. Ejecutar las pruebas de la API:
+
+   ```bash
+   make test-api
+   ```
+
+4. (Opcional) Ejecutar los tests de Go de la capa de datos:
 
    ```bash
    make test
    ```
 
-   ```bash
-   ./test.sh
-   ```
-
-## Funcionamiento del script `test.sh`
+## Funcionamiento de `make test-api`
 
 1. **Tareas previas:**
-   * Limpieza de contenedores y volúmenes previos.
-   * Verificación de compilación del proyecto en Go.
-   * Creación de volumen dedicado y arranque del contenedor PostgreSQL.
-   * Creación de tablas e inicialización de la base de datos.
+   * Creación de `.env` a partir de `.env.example`, si no existe.
+   * Ejecución de `sqlc generate` y compilación del proyecto (`go build`).
+   * Limpieza de contenedores y volúmenes anteriores (`docker compose down -v`).
+   * Construcción de la imagen de la API y arranque de la base y la API (`docker compose up -d --build --wait`). La base crea las tablas al iniciarse, y `--wait` espera a que la base y la API estén listas.
 
-2. **Ejecución de tests:**
-   * Ejecución de los tests utilizando el paquete oficial `testing` de Go.
+2. **Prueba de cada uno de los endpoints:** [`requests.sh`](requests.sh) hace 10 peticiones con `curl` a los 5 endpoints (casos válidos y de error), muestra cada respuesta y verifica el código HTTP.
 
-3. **Tareas posteriores:**
-   * Eliminación del contenedor y volúmenes asociados, independientemente de si las pruebas pasan o fallan.
+3. **Tareas posteriores:** eliminación de los contenedores, la red y el volumen (`docker compose down -v`), aunque las pruebas fallen.
+
+Si todo funciona, termina con `Todas las pruebas pasaron`. Si algo falla, muestra el log de los contenedores para ver el motivo y `make` termina con error.
+
 
 ## Documentación
 

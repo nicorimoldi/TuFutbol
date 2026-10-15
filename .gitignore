@@ -1,0 +1,5 @@
+# Configuración local: se genera a partir de .env.example
+.env
+
+# Código generado por sqlc: se genera con "make generate"
+db/sqlc/

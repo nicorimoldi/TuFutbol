@@ -1,0 +1,10 @@
+.git
+.env
+.env.example
+docs
+*.md
+*.sh
+Makefile
+Dockerfile
+docker-compose.yml
+.dockerignore
