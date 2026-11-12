@@ -1,0 +1,90 @@
+package views
+
+import "strconv"
+
+// PartidoForm es el formulario para cargar un partido nuevo (POST /partidos) o
+// editar uno existente (POST /partidos/{id}/editar). Es un formulario HTML
+// clásico: el navegador envía los datos y el servidor responde con una
+// redirección (patrón Post/Redirect/Get) o, si hay un error, con la página de
+// nuevo, el formulario completo con lo que se escribió y el mensaje del error.
+templ PartidoForm(form FormPartido) {
+	if form.ID == 0 {
+		<h2 id="titulo-formulario">Cargar partido</h2>
+	} else {
+		<h2 id="titulo-formulario">Editar partido contra { form.RivalActual }</h2>
+	}
+	<form class="formulario" method="post" action={ accionFormulario(form) }>
+		<div class="fila">
+			<div class="campo">
+				<label for="fecha">Fecha</label>
+				<input type="date" id="fecha" name="fecha" value={ form.Fecha } required/>
+			</div>
+			<div class="campo">
+				<label for="tipo_cancha">Tipo de cancha</label>
+				<input type="number" id="tipo_cancha" name="tipo_cancha" min="1" step="1" placeholder="5, 7, 11…" value={ form.TipoCancha } required/>
+			</div>
+		</div>
+		<div class="campo">
+			<label for="rival">Rival</label>
+			// Al editar, el foco arranca en el rival (como en el TP4)
+			<input type="text" id="rival" name="rival" maxlength="50" placeholder="Los Pibes FC" value={ form.Rival } required autofocus?={ form.ID != 0 }/>
+		</div>
+		<div class="fila">
+			<div class="campo">
+				<label for="resultado">Resultado</label>
+				<input type="text" id="resultado" name="resultado" maxlength="20" list="opciones-resultado" placeholder="Ganado" value={ form.Resultado } required/>
+			</div>
+			<div class="campo">
+				<label for="posicion">Posición <span class="opcional">(opcional)</span></label>
+				<input type="text" id="posicion" name="posicion" maxlength="10" list="opciones-posicion" placeholder="Delantero" value={ form.Posicion }/>
+			</div>
+		</div>
+		<div class="fila">
+			<div class="campo">
+				<label for="goles_propios">Goles</label>
+				<input type="number" id="goles_propios" name="goles_propios" min="0" step="1" value={ form.Goles } required/>
+			</div>
+			<div class="campo">
+				<label for="asistencias_propias">Asistencias</label>
+				<input type="number" id="asistencias_propias" name="asistencias_propias" min="0" step="1" value={ form.Asistencias } required/>
+			</div>
+			<div class="campo">
+				<label for="puntaje_propio">Puntaje</label>
+				<input type="number" id="puntaje_propio" name="puntaje_propio" min="1" max="10" step="1" placeholder="1 a 10" value={ form.Puntaje } class={ clasePuntajeFormulario(form.Puntaje) } required/>
+			</div>
+		</div>
+		<div class="botones-formulario">
+			if form.ID == 0 {
+				<button type="submit" class="boton-guardar">Guardar partido</button>
+			} else {
+				<button type="submit" class="boton-guardar">Guardar cambios</button>
+				<a class="boton-cancelar" href="/">Cancelar</a>
+			}
+		</div>
+		if form.Error != "" {
+			<p class="mensaje mensaje-error" role="alert">{ form.Error }</p>
+		} else if form.Mensaje != "" {
+			<p class="mensaje mensaje-ok" role="status">{ form.Mensaje }</p>
+		}
+	</form>
+	// Sugerencias para los campos de texto (se puede escribir otro valor)
+	<datalist id="opciones-resultado">
+		<option value="Ganado"></option>
+		<option value="Empatado"></option>
+		<option value="Perdido"></option>
+	</datalist>
+	<datalist id="opciones-posicion">
+		<option value="Arquero"></option>
+		<option value="Defensor"></option>
+		<option value="Medio"></option>
+		<option value="Delantero"></option>
+	</datalist>
+}
+
+// accionFormulario es la ruta a la que se envía el formulario.
+func accionFormulario(form FormPartido) templ.SafeURL {
+	if form.ID == 0 {
+		return templ.URL("/partidos")
+	}
+	return templ.URL("/partidos/" + strconv.Itoa(int(form.ID)) + "/editar")
+}

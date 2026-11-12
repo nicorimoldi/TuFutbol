@@ -17,18 +17,20 @@ services:
       interval: 1s
       retries: 60
 
-  api:
+  api:   # servidor web de TuFutbol (lo usan make up y make test-web; make run-app lo ejecuta fuera de Docker)
     build: .
     environment:
       # Dentro de Docker la base se encuentra por el nombre del servicio: db
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
+      # Zona horaria para la fecha de hoy que propone el formulario
+      TZ: America/Argentina/Buenos_Aires
     ports:
       - "${API_PORT}:8080"
     depends_on:
       db:
         condition: service_healthy   # no arranca hasta que la base esté lista
-    healthcheck:   # la API está lista cuando responde GET /partidos
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/partidos"]
+    healthcheck:   # el servidor está listo cuando responde GET /
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
       interval: 1s
       retries: 30
 

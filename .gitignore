@@ -3,3 +3,9 @@
 
 # Código generado por sqlc: se genera con "make generate"
 db/sqlc/
+
+# Código generado por templ: se genera con "make generate"
+*_templ.go
+
+# Binario compilado: se genera con "make build"
+bin/

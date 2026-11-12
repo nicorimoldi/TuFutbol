@@ -1,0 +1,69 @@
+package views
+
+// Layout es la estructura base de todas las páginas: <html>, <head> con la hoja
+// de estilos, la cabecera (mitad de cancha) y el pie (el área con el arco).
+// El contenido de cada página se recibe como hijo (children) y se renderiza
+// entre la cabecera y el pie.
+templ Layout(titulo string) {
+	<!DOCTYPE html>
+	<html lang="es">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ titulo }</title>
+			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+			// Tipografías: Barlow Condensed (títulos y números) y Barlow (texto)
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap"/>
+			// Hoja de estilos propia (static/styles.css), servida por el mismo servidor Go
+			<link rel="stylesheet" href="/static/styles.css"/>
+		</head>
+		<body>
+			<header class="cabecera">
+				<div class="cabecera-contenido">
+					<div class="marca">
+						<img src="/static/img/isotipo-negativo.svg" alt="" width="64" height="64"/>
+						<h1>TuFutbol</h1>
+					</div>
+					<p>Registrá cada partido que jugás con tus estadísticas: goles, asistencias, resultado y tu puntaje.</p>
+				</div>
+			</header>
+			{ children... }
+			// Pie: el final de la cancha, con el área y el arco marcados en tiza
+			<footer class="pie">
+				<div class="pie-contenido">
+					<div class="pie-texto">
+						<p class="pie-marca">
+							<img src="/static/img/isotipo-negativo.svg" alt="" width="32" height="32"/>
+							TuFutbol
+						</p>
+					</div>
+					<svg class="pie-area" viewBox="0 0 440 220" aria-hidden="true">
+						// área grande, área chica, medialuna y punto penal
+						<g fill="none" stroke="rgba(255, 255, 255, 0.55)" stroke-width="3">
+							<path d="M18.5 220 V55 H421.5 V220"></path>
+							<path d="M128.5 220 V165 H311.5 V220"></path>
+							<path d="M146.9 55 A91.5 91.5 0 0 1 293.1 55"></path>
+						</g>
+						<circle cx="220" cy="110" r="4" fill="rgba(255, 255, 255, 0.55)"></circle>
+					</svg>
+				</div>
+			</footer>
+		</body>
+	</html>
+}
+
+// PaginaError muestra un error (por ejemplo, un partido que no existe) con el
+// mismo diseño que el resto del sitio y un enlace para volver.
+templ PaginaError(titulo, mensaje string) {
+	@Layout(titulo + " · TuFutbol") {
+		<main class="pagina pagina-error">
+			<section class="panel">
+				<h2>{ titulo }</h2>
+				<p class="mensaje">{ mensaje }</p>
+				<p><a class="boton-volver" href="/">Volver a mis partidos</a></p>
+			</section>
+		</main>
+	}
+}

@@ -1,0 +1,129 @@
+package views
+
+import (
+	db "TuFutbol/db/sqlc"
+	"strconv"
+)
+
+// PartidoList recibe los partidos que devolvió ListPartidos (sqlc) y arma la
+// lista: el resumen con los totales, los filtros por resultado y un <li> por
+// cada partido. Sin partidos, muestra el dibujo del arco y la invitación a
+// cargar el primero.
+//
+// templ escapa automáticamente todo lo que se inserta con { ... }, así que los
+// textos que escribió el usuario (rival, resultado, posición) no se pueden
+// interpretar como HTML.
+templ PartidoList(partidos []db.Partido, estado EstadoLista) {
+	if len(partidos) == 0 {
+		@listaVacia()
+	} else {
+		@resumen(CalcularResumen(partidos))
+		<div class="controles-lista">
+			<nav class="filtros" aria-label="Filtrar por resultado">
+				for _, f := range Filtros(partidos) {
+					<a class="filtro" href={ templ.URL(urlFiltro(f.Valor)) } { filtroElegido(f.Valor == estado.Filtro)... }>
+						{ f.Nombre } <span class="cuenta">{ strconv.Itoa(f.Cuenta) }</span>
+					</a>
+				}
+			</nav>
+			<ul class="leyenda" aria-label="Colores del puntaje">
+				<li><span class="nota nota-flojo">1–4</span> Flojo</li>
+				<li><span class="nota nota-regular">5–6</span> Regular</li>
+				<li><span class="nota nota-bueno">7–8</span> Bueno</li>
+				<li><span class="nota nota-figura">9–10</span> Figura</li>
+			</ul>
+		</div>
+		if visibles := Filtrar(partidos, estado.Filtro); len(visibles) == 0 {
+			<p class="mensaje">No tenés partidos { nombresFiltro[estado.Filtro] }.</p>
+		} else {
+			<ul class="lista-partidos">
+				for _, p := range visibles {
+					@itemPartido(p, estado)
+				}
+			</ul>
+		}
+	}
+}
+
+// itemPartido es el <li> de un partido, con los botones Editar y Borrar.
+// Editar es un enlace a la página de edición; Borrar es un formulario que hace
+// POST /partidos/{id}/borrar (los formularios HTML solo envían GET y POST).
+templ itemPartido(p db.Partido, estado EstadoLista) {
+	<li class={ claseItem(p, estado) }>
+		<p class="partido-fecha">
+			<span class="dia">{ dia(p) }</span>
+			<span class="mes">{ mesAnio(p) }</span>
+		</p>
+		<div class="partido-info">
+			<h3>vs { p.Rival }</h3>
+			<p>
+				<span class={ "resultado " + ClaseResultado(p.Resultado) }>{ p.Resultado }</span>
+				{ detalle(p) }
+				if insignia := InsigniaGoles(p.GolesPropios); insignia != "" {
+					<span class="insignia">{ insignia }</span>
+				}
+			</p>
+		</div>
+		<dl class="partido-estadisticas">
+			<div><dt>Goles</dt><dd>{ numero(p.GolesPropios) }</dd></div>
+			<div><dt>Asist.</dt><dd>{ numero(p.AsistenciasPropias) }</dd></div>
+			<div>
+				<dt>Puntaje</dt>
+				{{ nivel := NivelPuntaje(p.PuntajePropio) }}
+				<dd class={ "nota nota-" + nivel.Clase } title={ nivel.Nombre }>
+					{ numero(p.PuntajePropio) }<span class="solo-lector">, { nivel.Nombre }</span>
+				</dd>
+			</div>
+		</dl>
+		<div class="acciones">
+			<a class="boton-editar" href={ templ.URL("/partidos/" + numero(p.IDPartido) + "/editar") } aria-label={ "Editar el partido contra " + p.Rival }>Editar</a>
+			<form method="post" action={ templ.URL("/partidos/" + numero(p.IDPartido) + "/borrar") }>
+				<button type="submit" class="boton-borrar" aria-label={ "Borrar el partido contra " + p.Rival }>Borrar</button>
+			</form>
+		</div>
+	</li>
+}
+
+// resumen muestra los totales de todos los partidos y los últimos 5 resultados
+// como G / E / P (el de la derecha es el último partido), como en las tablas de posiciones.
+templ resumen(r Resumen) {
+	<dl class="resumen">
+		<div><dt>Partidos</dt><dd>{ strconv.Itoa(r.Partidos) }</dd></div>
+		<div><dt>Goles</dt><dd>{ numero(r.Goles) }</dd></div>
+		<div><dt>Asistencias</dt><dd>{ numero(r.Asistencias) }</dd></div>
+		<div>
+			<dt>Puntaje promedio</dt>
+			<dd><span class={ "nota nota-" + r.Nivel.Clase } title={ r.Nivel.Nombre }>{ r.Promedio }</span></dd>
+		</div>
+		<div>
+			<dt>Últimos 5</dt>
+			<dd class="forma">
+				for _, item := range r.Forma {
+					<span class={ "forma-item " + item.Clase } title={ item.Descripcion }>
+						<span aria-hidden="true">{ item.Letra }</span><span class="solo-lector">{ item.Descripcion }</span>
+					</span>
+				}
+			</dd>
+		</div>
+	</dl>
+}
+
+// listaVacia se muestra cuando todavía no hay partidos: el dibujo de un arco con la pelota adentro.
+templ listaVacia() {
+	<div class="lista-vacia">
+		<svg viewBox="0 0 240 140" aria-hidden="true">
+			// red del arco
+			<g stroke="#a9cdb1" stroke-width="1.5">
+				<path d="M50 120 V36 H190 V120" fill="none"></path>
+				<path d="M30 20 L50 36 M210 20 L190 36 M70 36 V120 M90 36 V120 M110 36 V120 M130 36 V120 M150 36 V120 M170 36 V120 M50 56 H190 M50 76 H190 M50 96 H190"></path>
+			</g>
+			// césped, palos y travesaño
+			<path d="M8 130 H232" stroke="#a9cdb1" stroke-width="3" stroke-linecap="round"></path>
+			<path d="M30 130 V20 H210 V130" fill="none" stroke="#1f6b35" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+			// pelota
+			<circle cx="176" cy="117" r="12" fill="#ffffff" stroke="#1f6b35" stroke-width="3"></circle>
+			<path d="M176 112 L180.8 115.5 L178.9 121 H173.1 L171.2 115.5 Z" fill="#1f6b35"></path>
+		</svg>
+		<p>Todavía no cargaste partidos. Completá el formulario para agregar el primero.</p>
+	</div>
+}

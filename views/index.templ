@@ -1,0 +1,28 @@
+package views
+
+import db "TuFutbol/db/sqlc"
+
+// IndexPage es la página principal: usa el Layout y adentro renderiza el
+// formulario (PartidoForm) y la lista de partidos (PartidoList) con los datos
+// que obtuvo el handler de la base de datos.
+//
+// La misma página se usa para editar un partido (GET /partidos/{id}/editar):
+// en ese caso el formulario viene completo con los datos del partido.
+// aviso es el mensaje que aparece abajo después de borrar un partido ("" si no hay).
+templ IndexPage(titulo string, partidos []db.Partido, estado EstadoLista, form FormPartido, aviso string) {
+	@Layout(titulo) {
+		<main class="pagina">
+			<section class="panel panel-formulario" aria-labelledby="titulo-formulario">
+				@PartidoForm(form)
+			</section>
+			<section class="panel" aria-labelledby="titulo-lista">
+				<h2 id="titulo-lista">Mis partidos</h2>
+				@PartidoList(partidos, estado)
+			</section>
+		</main>
+		if aviso != "" {
+			// Desaparece solo a los 8 segundos (animación de CSS, sin JavaScript)
+			<div class="aviso" role="status">{ aviso }</div>
+		}
+	}
+}

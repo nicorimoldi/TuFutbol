@@ -1,0 +1,856 @@
+/* Estilos de TuFutbol.
+   Layout: CSS Grid para la página (formulario | lista) y para cada partido de la lista,
+   Flexbox para las filas del formulario, el resumen, los filtros y la leyenda.
+   El HTML lo generan los componentes templ de la carpeta views/. */
+
+/* ---------------------------------------------------------------------------
+   Colores y tipografías
+   --------------------------------------------------------------------------- */
+:root {
+    --cesped: #1f6b35;          /* franjas del pasto */
+    --cesped-claro: #267a3f;
+    --tiza: #ffffff;            /* líneas de la cancha */
+    --fondo: #f2f5f2;
+    --panel: #ffffff;
+    --tinta: #18201b;           /* texto principal */
+    --tinta-suave: #556259;     /* texto secundario */
+    --linea: #d5ddd6;           /* separadores */
+    --borde-input: #869489;
+    --amarilla: #f4c430;
+    --roja: #b3261e;            /* borrar y errores */
+
+    --letra-texto: "Barlow", system-ui, sans-serif;
+    --letra-titulos: "Barlow Condensed", "Arial Narrow", sans-serif;
+
+    /* Líneas de la cancha. La página es media cancha vista desde arriba: la
+       mitad de cancha en la cabecera, las líneas laterales a los costados y el
+       área con el arco en el pie. */
+    --tiza-suave: rgba(255, 255, 255, 0.55);
+    /* Distancia del borde de la ventana a cada línea lateral: 40px por fuera
+       del contenido (que mide 1068px como máximo), o 8px en pantallas angostas */
+    --lateral: max(8px, calc(50vw - 574px));
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    /* Fondo: el pasto en verde claro, con las líneas laterales de la cancha */
+    background:
+        linear-gradient(#ffffff, #ffffff) left var(--lateral) top 0 / 3px 100% no-repeat,
+        linear-gradient(#ffffff, #ffffff) right var(--lateral) top 0 / 3px 100% no-repeat,
+        repeating-linear-gradient(90deg, #e2ede3 0 72px, #d7e7d9 72px 144px);
+    color: var(--tinta);
+    font-family: var(--letra-texto);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+h1, h2, h3 {
+    font-family: var(--letra-titulos);
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0;
+}
+
+/* Texto que solo leen los lectores de pantalla */
+.solo-lector {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+   Cabecera: pasto a franjas con la mitad de cancha marcada en tiza
+   --------------------------------------------------------------------------- */
+.cabecera {
+    position: relative;
+    overflow: hidden;
+    color: var(--tiza);
+    background:
+        /* líneas laterales */
+        linear-gradient(var(--tiza-suave), var(--tiza-suave)) left var(--lateral) top 0 / 3px 100% no-repeat,
+        linear-gradient(var(--tiza-suave), var(--tiza-suave)) right var(--lateral) top 0 / 3px 100% no-repeat,
+        /* línea de mitad de cancha, de una línea lateral a la otra */
+        linear-gradient(var(--tiza-suave), var(--tiza-suave)) left var(--lateral) top 24px / calc(100% - 2 * var(--lateral)) 3px no-repeat,
+        /* franjas del pasto */
+        repeating-linear-gradient(90deg, var(--cesped) 0 72px, var(--cesped-claro) 72px 144px);
+}
+
+/* Círculo central y punto central, sobre la línea de mitad de cancha
+   (top: 24px de la línea + la mitad de su grosor) */
+.cabecera::before,
+.cabecera::after {
+    content: "";
+    position: absolute;
+    top: 25.5px;
+    left: 50%;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.cabecera::before {
+    width: 10px;
+    height: 10px;
+    background: var(--tiza-suave);
+}
+
+.cabecera::after {
+    width: 160px;
+    height: 160px;
+    border: 3px solid var(--tiza-suave);
+}
+
+.cabecera-contenido {
+    position: relative; /* queda por encima de las líneas */
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 52px 16px 32px;
+}
+
+/* Logo: isotipo + nombre */
+.marca {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.marca img {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+}
+
+.cabecera h1 {
+    position: relative;
+    top: -0.08em; /* centra ópticamente el texto con el isotipo */
+    font-size: 3.5rem;
+    line-height: 1;
+}
+
+.cabecera p {
+    max-width: 34em;
+    margin: 12px 0 0;
+    font-size: 1.125rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Layout de la página: dos columnas con CSS Grid (una sola en pantallas chicas)
+   --------------------------------------------------------------------------- */
+.pagina {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 32px;
+    align-items: start;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 16px 56px;
+}
+
+/* En pantallas grandes el formulario acompaña el scroll de la lista */
+.panel-formulario {
+    position: sticky;
+    top: 24px;
+}
+
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--linea);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.panel h2 {
+    font-size: 1.75rem;
+    margin-bottom: 20px;
+    overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------------------
+   Formulario
+   --------------------------------------------------------------------------- */
+.formulario {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Campos uno al lado del otro con Flexbox */
+.fila {
+    display: flex;
+    gap: 12px;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0; /* permite que los inputs se achiquen dentro de la fila */
+}
+
+label {
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+.opcional {
+    font-weight: 400;
+    color: var(--tinta-suave);
+}
+
+input {
+    width: 100%;
+    height: 44px; /* mismo alto para todos (el input de fecha es más alto por defecto) */
+    padding: 0 10px;
+    font: inherit;
+    color: var(--tinta);
+    background: var(--panel);
+    border: 1px solid var(--borde-input);
+    border-radius: 6px;
+}
+
+button {
+    font: inherit;
+    cursor: pointer;
+}
+
+input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+    outline: 3px solid var(--cesped-claro);
+    outline-offset: 2px;
+}
+
+.botones-formulario {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.boton-guardar {
+    flex: 1;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 1.0625rem;
+    color: var(--tiza);
+    background: var(--cesped);
+    border: none;
+    border-radius: 6px;
+}
+
+.boton-guardar:hover {
+    background: var(--cesped-claro);
+}
+
+/* Cancelar (en modo edición) es un enlace a la página principal */
+.boton-cancelar {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 18px;
+    text-decoration: none;
+    font-weight: 600;
+    color: var(--tinta);
+    background: transparent;
+    border: 1px solid var(--borde-input);
+    border-radius: 6px;
+}
+
+.boton-cancelar:hover {
+    background: var(--fondo);
+}
+
+/* Mensajes de estado (lista vacía, partido guardado, errores) */
+.mensaje {
+    margin: 0;
+    color: var(--tinta-suave);
+}
+
+.mensaje:empty {
+    display: none;
+}
+
+.mensaje-ok {
+    color: var(--cesped);
+    font-weight: 600;
+}
+
+.mensaje-error {
+    color: var(--roja);
+    font-weight: 600;
+}
+
+/* "No tenés partidos ganados." abajo de los filtros */
+.controles-lista + .mensaje {
+    margin-top: 16px;
+}
+
+/* ---------------------------------------------------------------------------
+   Puntaje: color según el rendimiento (más oscuro = mejor partido)
+   --------------------------------------------------------------------------- */
+.nota {
+    display: inline-block;
+    min-width: 34px;
+    padding: 0 6px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.nota-flojo {               /* 1 a 4 */
+    color: #8f1d17;
+    background: #fbdcd8;
+}
+
+.nota-regular {             /* 5 y 6 */
+    color: var(--tinta);
+    background: var(--amarilla);
+}
+
+.nota-bueno {               /* 7 y 8 */
+    color: #10291a;
+    background: #5cb874;
+}
+
+.nota-figura {              /* 9 y 10 */
+    color: var(--tiza);
+    background: var(--cesped);
+}
+
+/* ---------------------------------------------------------------------------
+   Resumen, filtros y leyenda
+   --------------------------------------------------------------------------- */
+.resumen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+    margin: 0 0 20px;
+}
+
+.resumen dt {
+    font-size: 0.875rem;
+    color: var(--tinta-suave);
+}
+
+.resumen dd {
+    margin: 0;
+    font-family: var(--letra-titulos);
+    font-weight: 700;
+    font-size: 2.25rem;
+    line-height: 1;
+}
+
+.resumen .nota {
+    padding: 0 8px;
+}
+
+/* Últimos 5 resultados, como en las tablas de posiciones */
+.resumen dd.forma {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 36px;
+}
+
+.forma-item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-family: var(--letra-texto);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--tiza);
+    background: #5f6b63;        /* empatado u otro resultado */
+}
+
+.forma-item.ganado {
+    background: var(--cesped);
+}
+
+.forma-item.perdido {
+    background: var(--roja);
+}
+
+.controles-lista {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px 24px;
+    margin: 0 -12px;         /* mismo ancho que las filas de partidos, */
+    padding: 0 12px 16px;    /* así la línea de abajo coincide con las suyas */
+    border-bottom: 1px solid var(--linea);
+}
+
+.filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Cada filtro es un enlace a la página con ?resultado=... */
+.filtro {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    text-decoration: none;
+    padding: 4px 14px;
+    font-weight: 500;
+    color: var(--tinta);
+    background: var(--panel);
+    border: 1px solid var(--borde-input);
+    border-radius: 999px;
+}
+
+.filtro:hover {
+    background: var(--fondo);
+}
+
+.filtro .cuenta {
+    margin-left: 2px;
+    font-weight: 600;
+    color: var(--tinta-suave);
+}
+
+/* El filtro elegido */
+.filtro[aria-current="true"] {
+    color: var(--tiza);
+    background: var(--cesped);
+    border-color: var(--cesped);
+}
+
+.filtro[aria-current="true"] .cuenta {
+    color: var(--tiza);
+}
+
+.leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.875rem;
+    color: var(--tinta-suave);
+}
+
+.leyenda li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.leyenda .nota {
+    font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+   Lista de partidos: cada partido es una fila de una grilla
+   --------------------------------------------------------------------------- */
+.lista-partidos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.partido {
+    display: grid;
+    grid-template-columns: 64px 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    margin: 0 -12px;    /* la fila ocupa un poco más que el contenido, */
+    padding: 16px 12px; /* así el resaltado no queda pegado al texto   */
+    border-bottom: 1px solid var(--linea);
+}
+
+.partido:last-child {
+    border-bottom: none;
+}
+
+.partido-fecha {
+    margin: 0;
+    text-align: center;
+    line-height: 1;
+}
+
+.partido-fecha .dia {
+    display: block;
+    font-family: var(--letra-titulos);
+    font-weight: 700;
+    font-size: 2rem;
+}
+
+.partido-fecha .mes {
+    font-size: 0.8125rem;
+    color: var(--tinta-suave);
+}
+
+.partido-info {
+    min-width: 0;
+}
+
+.partido-info h3 {
+    font-size: 1.375rem;
+    overflow-wrap: anywhere;
+}
+
+.partido-info p {
+    margin: 4px 0 0;
+    color: var(--tinta-suave);
+}
+
+/* Etiqueta del resultado, con color según ganado / empatado / perdido */
+.resultado {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    color: var(--tinta);
+    background: #e7ebe7;
+}
+
+.resultado.ganado {
+    color: #17522a;
+    background: #dcefe0;
+}
+
+.resultado.perdido {
+    color: #8f1d17;
+    background: #f8dedb;
+}
+
+/* Insignia por goles: Hat-trick (3), Póker (4) y Manito (5 o más) */
+.insignia {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 0 8px;
+    border: 1px solid var(--cesped);
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--cesped);
+}
+
+/* Goles, asistencias y puntaje */
+.partido-estadisticas {
+    display: flex;
+    gap: 16px;
+    margin: 0;
+    text-align: center;
+}
+
+.partido-estadisticas dt {
+    font-size: 0.8125rem;
+    color: var(--tinta-suave);
+}
+
+.partido-estadisticas dd {
+    margin: 0;
+    font-family: var(--letra-titulos);
+    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 1.2;
+}
+
+/* Editar (enlace a la página de edición) y Borrar (botón de un formulario POST) */
+.acciones {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* El formulario de Borrar ocupa el mismo ancho que el enlace Editar */
+.acciones form {
+    display: flex;
+}
+
+.acciones form .boton-borrar {
+    flex: 1;
+}
+
+.boton-editar,
+.boton-borrar {
+    padding: 5px 12px;
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: center;
+    text-decoration: none;
+    background: transparent;
+    border-radius: 6px;
+}
+
+.boton-editar {
+    color: var(--cesped);
+    border: 1px solid var(--cesped);
+}
+
+.boton-editar:hover {
+    color: var(--tiza);
+    background: var(--cesped);
+}
+
+.boton-borrar {
+    color: var(--roja);
+    border: 1px solid var(--roja);
+}
+
+.boton-borrar:hover {
+    color: var(--tiza);
+    background: var(--roja);
+}
+
+.partido:hover {
+    background: #f4f9f4;
+}
+
+/* El partido que se está editando */
+.partido.editando {
+    background: #fdf3cf;
+}
+
+/* El partido recién creado o editado se resalta un momento */
+.partido.nuevo {
+    animation: resaltar 2.5s ease-out;
+}
+
+@keyframes resaltar {
+    from { background: #fff3c4; }
+    to   { background: transparent; }
+}
+
+/* Lista vacía: dibujo de un arco con la pelota adentro */
+.lista-vacia {
+    padding: 8px 0 4px;
+    text-align: center;
+    color: var(--tinta-suave);
+}
+
+.lista-vacia svg {
+    display: block;
+    width: 220px;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto 16px;
+}
+
+.lista-vacia p {
+    max-width: 28em;
+    margin: 0 auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Pie: el final de la cancha, con el área y el arco dibujados en tiza
+   --------------------------------------------------------------------------- */
+.pie {
+    position: relative;
+    color: var(--tiza);
+    background:
+        /* líneas laterales, hasta la línea de fondo */
+        linear-gradient(var(--tiza-suave), var(--tiza-suave)) left var(--lateral) top 0 / 3px calc(100% - 24px) no-repeat,
+        linear-gradient(var(--tiza-suave), var(--tiza-suave)) right var(--lateral) top 0 / 3px calc(100% - 24px) no-repeat,
+        /* línea de fondo (la del arco) */
+        linear-gradient(var(--tiza-suave), var(--tiza-suave)) left var(--lateral) bottom 24px / calc(100% - 2 * var(--lateral)) 3px no-repeat,
+        /* franjas del pasto */
+        repeating-linear-gradient(90deg, var(--cesped) 0 72px, var(--cesped-claro) 72px 144px);
+}
+
+/* El arco, detrás de la línea de fondo, con la red */
+.pie::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 76px;
+    height: 24px;
+    border: 3px solid var(--tiza-suave);
+    border-top: none;
+    background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px 7px);
+    transform: translateX(-50%);
+}
+
+/* Tres columnas: texto | área (centrada en la página) | vacía.
+   Abajo deja 27px: la línea de fondo (24px) más su grosor, así el área apoya sobre ella. */
+.pie-contenido {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 16px 27px;
+}
+
+.pie-texto p {
+    margin: 0 0 4px;
+}
+
+.pie-marca {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--letra-titulos);
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.pie-area {
+    display: block;
+    align-self: end; /* apoyada sobre la línea de fondo */
+    width: 440px;
+    max-width: 100%;
+    height: auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Aviso de partido borrado: aparece abajo y se va solo a los 8 segundos,
+   con animaciones de CSS (sin JavaScript)
+   --------------------------------------------------------------------------- */
+.aviso {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    width: max-content;
+    max-width: calc(100% - 32px);
+    padding: 12px 20px;
+    color: var(--tiza);
+    background: var(--tinta);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(24, 32, 27, 0.3);
+    transform: translateX(-50%);
+    animation:
+        aparecer 0.2s ease-out,
+        desaparecer 0.3s ease-in 8s forwards;
+}
+
+@keyframes aparecer {
+    from { opacity: 0; transform: translate(-50%, 12px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* visibility: hidden al final, así tampoco lo leen los lectores de pantalla */
+@keyframes desaparecer {
+    to { opacity: 0; visibility: hidden; transform: translate(-50%, 12px); }
+}
+
+/* Sin movimiento: el aviso aparece y se va de golpe, sin deslizarse */
+@keyframes ocultar {
+    to { visibility: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .partido.nuevo {
+        animation: none;
+    }
+
+    .aviso {
+        animation: ocultar 0s 8s forwards;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Página de error (partido o página que no existe)
+   --------------------------------------------------------------------------- */
+/* El contenido es corto: el body se estira para que el pie quede abajo de todo */
+body:has(.pagina-error) {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.pagina-error {
+    flex: 1;
+    grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 640px;
+}
+
+.pagina-error .mensaje {
+    margin-bottom: 20px;
+}
+
+.boton-volver {
+    display: inline-block;
+    padding: 10px 18px;
+    font-weight: 600;
+    color: var(--tiza);
+    text-decoration: none;
+    background: var(--cesped);
+    border-radius: 6px;
+}
+
+.boton-volver:hover {
+    background: var(--cesped-claro);
+}
+
+/* ---------------------------------------------------------------------------
+   Pantallas chicas
+   --------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+    .pagina {
+        grid-template-columns: 1fr;
+    }
+
+    .panel-formulario {
+        position: static; /* en una sola columna el formulario va arriba, sin quedar fijo */
+    }
+
+    /* Pie en una columna: el texto arriba y el área abajo, centrada */
+    .pie-contenido {
+        grid-template-columns: 1fr;
+    }
+
+    .pie-area {
+        margin: 0 auto;
+    }
+}
+
+/* En pantallas angostas el círculo central taparía el título: queda solo la línea */
+@media (max-width: 760px) {
+    .cabecera::before,
+    .cabecera::after {
+        display: none;
+    }
+}
+
+@media (max-width: 560px) {
+    .marca img {
+        width: 52px;
+        height: 52px;
+    }
+
+    .cabecera h1 {
+        font-size: 2.75rem;
+    }
+
+    .panel {
+        padding: 20px 16px;
+    }
+
+    /* Resumen en dos columnas */
+    .resumen div {
+        flex-basis: 40%;
+    }
+
+    /* Fecha a la izquierda; abajo de la info van las estadísticas y los botones */
+    .partido {
+        grid-template-columns: 52px 1fr;
+        row-gap: 12px;
+    }
+
+    .partido-estadisticas,
+    .acciones {
+        grid-column: 2;
+    }
+
+    .acciones {
+        flex-direction: row;
+    }
+}
